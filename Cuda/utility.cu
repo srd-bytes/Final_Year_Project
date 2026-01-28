@@ -22,13 +22,13 @@ __global__ void initialize_matrix(int N, float** A){
 
 __global__ void initialize_vector(int N, float* v){
     int index = blockDim.x*blockIdx.x+threadIdx.x;
-    v[index] = index +1;
-    
+    // v[index] = index +1;
+    v[index] = 1.0f;
     printf("v[%d] = %f\n",index,v[index]);
 }
 
 
-__global__ void matrix_vector_product(int N, float** A, float* v, float* result){
+__global__ void matrix_vector_product(int N, float** A, float* v){
     
     __shared__ float shared_A[Tile_width][Tile_width];
     __shared__ float shared_v[Tile_width];
@@ -47,50 +47,53 @@ __global__ void matrix_vector_product(int N, float** A, float* v, float* result)
     }
     __syncthreads();
 
-    result[blockIdx.x*blockDim.x+threadIdx.x] = value;
+    v[blockIdx.x*blockDim.x+threadIdx.x] = value;
+    
+}
+
+__global__ void vector_addition_and_scaler_mult(float* v1, float* v2, float scaler = 1.0f){
+    // 1D blocks and threads
+    v1[blockDim.x*blockIdx.x + threadIdx.x] = scaler*(v1[blockDim.x*blockIdx.x + threadIdx.x] + v2[blockDim.x*blockIdx.x + threadIdx.x]);
     __syncthreads();
-    printf("result[%d] = %f\n",blockIdx.x*blockDim.x+threadIdx.x,result[blockIdx.x*blockDim.x+threadIdx.x]);
+    // printf("v1[%d] = %f\n",blockDim.x*blockIdx.x + threadIdx.x,v1[blockDim.x*blockIdx.x + threadIdx.x]);
 }
-
-
 //--------------------Test Code----------------
-int main(void)
+// int main(void)
 
-{
-    //Matrix allocation
-    float* A_cpu[N];
-    for(int i=0;i<N ; i++){
-        cudaMalloc((void**)&A_cpu[i], N* sizeof(float));
-    }
+// {
+//     //Matrix allocation
+//     float* A_cpu[N];
+//     for(int i=0;i<N ; i++){
+//         cudaMalloc((void**)&A_cpu[i], N* sizeof(float));
+//     }
     
-    float** A_gpu;
-    cudaMalloc((void**)&A_gpu, N*sizeof(float*) );
-    cudaMemcpy(A_gpu, A_cpu, N*sizeof(float*), cudaMemcpyHostToDevice);
+//     float** A_gpu;
+//     cudaMalloc((void**)&A_gpu, N*sizeof(float*) );
+//     cudaMemcpy(A_gpu, A_cpu, N*sizeof(float*), cudaMemcpyHostToDevice);
     
 
-    dim3 blocks(N/Tile_width,N/Tile_width);
-    dim3 threads_per_block(Tile_width,Tile_width);
-    initialize_matrix<<<blocks,threads_per_block>>>(N,A_gpu);
+//     dim3 blocks(N/Tile_width,N/Tile_width);
+//     dim3 threads_per_block(Tile_width,Tile_width);
+//     initialize_matrix<<<blocks,threads_per_block>>>(N,A_gpu);
 
-    //Vector part
-    float* v_gpu;
-    cudaMalloc((void**)&v_gpu, N*sizeof(float));
-    initialize_vector<<<N/Tile_width, Tile_width>>>(N,v_gpu);
+//     //Vector part
+//     float* v_gpu;
+//     cudaMalloc((void**)&v_gpu, N*sizeof(float));
+//     initialize_vector<<<N/Tile_width, Tile_width>>>(N,v_gpu);
 
-    //result
-    float* result_gpu;
-    cudaMalloc((void**)&result_gpu, N*sizeof(float));
-    matrix_vector_product<<<N/Tile_width,Tile_width>>>(N,A_gpu,v_gpu,result_gpu);
+//     //Matrix Vector Product
+//     matrix_vector_product<<<N/Tile_width,Tile_width>>>(N,A_gpu,v_gpu);
 
-    cudaDeviceSynchronize();
+//     cudaDeviceSynchronize();
 
 
-    // Deallocation
-    for(int i = 0; i < N; i++) {
-        cudaFree(A_gpu[i]);
-    }
-    cudaFree(A_gpu);
-    free(A_cpu);
-    cudaFree(v_gpu);
-    return 0;
-}
+//     // Deallocation
+//     for(int i = 0; i < N; i++) {
+//         cudaFree(A_gpu[i]);
+//     }
+//     cudaFree(A_gpu);
+//     free(A_cpu);
+//     cudaFree(v_gpu);
+    
+//     return 0;
+// }
