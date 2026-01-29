@@ -3,32 +3,43 @@
 #include <cuda_runtime.h>
 
 //-----------------Global Variables ------------
-const int Tile_width = 2;
-const int N = 4 ;
+const int Tile_width = 8;
+const int N = 128 ;
 
 //-----------------CPU specific code------------
 
 // ---------------- GPU KERNELS ----------------
 
-__global__ void initialize_matrix(int N, float** A){
+__global__ void initialize_matrix_by_const(int N, float** A, float value){
     // here using shared memory is useless . Also I need to spawn 2D blocks and threads
     int index_col = blockDim.x*blockIdx.x+threadIdx.x;
     int index_row = blockDim.y*blockIdx.y+threadIdx.y;
 
-    A[index_row][index_col] = N*index_row+index_col +1;
+    A[index_row][index_col] = value;
     
-    printf("A[%d][%d] = %f\n",index_row,index_col,A[index_row][index_col]);
+    // printf("A[%d][%d] = %f\n",index_row,index_col,A[index_row][index_col]);
 }
 
-__global__ void initialize_vector(int N, float* v){
+__global__ void print_matrix(float** A){
+    int index_col = blockDim.x*blockIdx.x+threadIdx.x;
+    int index_row = blockDim.y*blockIdx.y+threadIdx.y;
+    printf("A[%d][%d] = %f\n",index_row,index_col,A[index_row][index_col]);
+    __syncthreads();
+}
+__global__ void print_vector(float* v){
+    int index = blockDim.x*blockIdx.x+threadIdx.x;
+    printf("vector[%d] = %f\n",index,v[index]);
+    __syncthreads();
+}
+__global__ void initialize_vector_const(int N, float* v, float value){
     int index = blockDim.x*blockIdx.x+threadIdx.x;
     // v[index] = index +1;
-    v[index] = 1.0f;
-    printf("v[%d] = %f\n",index,v[index]);
+    v[index] = value;
+    // printf("v[%d] = %f\n",index,v[index]);
 }
 
 
-__global__ void matrix_vector_product(int N, float** A, float* v){
+__global__ void matrix_vector_product(int N, float** A, float* v, float* result){
     
     __shared__ float shared_A[Tile_width][Tile_width];
     __shared__ float shared_v[Tile_width];
@@ -47,13 +58,13 @@ __global__ void matrix_vector_product(int N, float** A, float* v){
     }
     __syncthreads();
 
-    v[blockIdx.x*blockDim.x+threadIdx.x] = value;
+    result[blockIdx.x*blockDim.x+threadIdx.x] = value;
     
 }
 
-__global__ void vector_addition_and_scaler_mult(float* v1, float* v2, float scaler = 1.0f){
+__global__ void vector_addition_and_scaler_mult(float* v1, float* v2, float* result, float scaler = 1.0f){
     // 1D blocks and threads
-    v1[blockDim.x*blockIdx.x + threadIdx.x] = scaler*(v1[blockDim.x*blockIdx.x + threadIdx.x] + v2[blockDim.x*blockIdx.x + threadIdx.x]);
+    result[blockDim.x*blockIdx.x + threadIdx.x] = scaler*(v1[blockDim.x*blockIdx.x + threadIdx.x] + v2[blockDim.x*blockIdx.x + threadIdx.x]);
     __syncthreads();
     // printf("v1[%d] = %f\n",blockDim.x*blockIdx.x + threadIdx.x,v1[blockDim.x*blockIdx.x + threadIdx.x]);
 }
