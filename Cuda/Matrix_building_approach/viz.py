@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Read CSV (single column)
-V = pd.read_csv("potential.csv", header=None)
+V = pd.read_csv(".result/potential.csv", header=None)
 
 # Generate x from index
 x_V = V.index.values
