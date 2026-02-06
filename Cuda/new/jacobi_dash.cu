@@ -44,7 +44,7 @@ void jacobi_cuda_2D(float** phi_old, float** phi_new){
     }  
 }
 
-void jacobi_cuda_2D(float*** phi_old, float*** phi_new){
+void jacobi_cuda_3D(float*** phi_old, float*** phi_new){
     // block = N/Tilewidth, thrd_per_blk = Tilewidth
     
 
