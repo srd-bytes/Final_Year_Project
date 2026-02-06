@@ -81,8 +81,8 @@ void jacobi_cuda_3D(float*** phi_old, float*** phi_new){
 
 int main(void)
 {
-    float** phi_old_cpu= (float**)malloc(N*sizeof(float*));
-    float** phi_new_cpu= (float**)malloc(N*sizeof(float*));
+    // float** phi_old_cpu= (float**)malloc(N*sizeof(float*));
+    // float** phi_new_cpu= (float**)malloc(N*sizeof(float*));
 
 
     for(int i=0; i<N; i++){
