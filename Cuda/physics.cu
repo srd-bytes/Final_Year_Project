@@ -52,15 +52,19 @@ __global__ void physics_solution_2D(float* phi_old, float* phi_new){
     float right = (index_x == n-1)? phi_right_boundary :phi_old[flat_index+1];
     float up = (index_y == 0)? phi_up_boundary :phi_old[flat_index-n];
     float down= (index_y == n-1) ? phi_down_boundary :phi_old[flat_index+n];
+    
 
     phi_new[flat_index] = (left + right + up + down + b)/4 ;
+    
 }
 
-__global__ void physics_solution_3D(float*** phi_old, float*** phi_new, int N){
+__global__ void physics_solution_3D(float* phi_old, float* phi_new, int N){
 
     int index_x = blockDim.x*blockIdx.x+threadIdx.x; //column
     int index_y = blockDim.y*blockIdx.y+threadIdx.y; // rows
     int index_z = blockDim.z*blockIdx.z+threadIdx.z;
+    int n= gridDim.x*blockDim.x;
+    int flat_index= n*n*index_z + n*index_y + index_x;
 
     float delta = 0.2f;
     float epsilon = 8.8f;
@@ -81,18 +85,18 @@ __global__ void physics_solution_3D(float*** phi_old, float*** phi_new, int N){
 
     // ---------------------------------Assignment--------------------------------------------------------
 
-    float left= (index_x==0) ? phi_left_boundary : phi_old[index_z][index_y][index_x-1];
-    float right = (index_x == N-1)? phi_right_boundary :phi_old[index_z][index_y][index_x+1];
+    float left= (index_x==0) ? phi_left_boundary : phi_old[flat_index-1];
+    float right = (index_x == N-1)? phi_right_boundary :phi_old[flat_index+1];
 
-    float front = (index_y == 0)? phi_front_boundary :phi_old[index_z][index_y-1][index_x];
-    float back= (index_y == N-1) ? phi_back_boundary :phi_old[index_z][index_y+1][index_x];
+    float front = (index_y == 0)? phi_front_boundary :phi_old[flat_index-n];
+    float back= (index_y == N-1) ? phi_back_boundary :phi_old[flat_index+n];
 
 
-    float bottom = (index_z == 0)? phi_bottom_boundary :phi_old[index_z-1][index_y][index_x];
-    float top= (index_z == N-1) ? phi_top_boundary :phi_old[index_z+1][index_y][index_x];
+    float bottom = (index_z == 0)? phi_bottom_boundary :phi_old[flat_index-n*n];
+    float top= (index_z == N-1) ? phi_top_boundary :phi_old[flat_index+n*n];
     // ---------------------------------------------------------------------------------------------------
 
-    phi_new[index_z][index_y][index_x] = (left + right + back + front + bottom + top + b)/6 ;
+    phi_new[flat_index] = (left + right + back + front + bottom + top + b)/6 ;
 }
 // // -----------------Test-----------------------
 // int main(){

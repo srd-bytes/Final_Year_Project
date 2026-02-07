@@ -20,12 +20,15 @@ __global__ void initialize_2Dmatrix_by_const(float* matrix_2D,float value){ // z
     // printf("v[%d] = %f\n",index,v[index]);
 }
 
-__global__ void initialize_3Dmatrix_by_const(float*** matrix_3D, float value){
+__global__ void initialize_3Dmatrix_by_const(float* matrix_3D, float value){
     int index_x = blockDim.x*blockIdx.x+threadIdx.x;
     int index_y = blockDim.y*blockIdx.y+threadIdx.y;
     int index_z = blockDim.z*blockIdx.z+threadIdx.z;
     // v[index] = index +1;
-    matrix_3D[index_z][index_y][index_x] = value;
+    int n= gridDim.x*blockDim.x;
+    int flat_index= n*n*index_z + n*index_y + index_x;
+
+    matrix_3D[flat_index] = value;
     // printf("v[%d] = %f\n",index,v[index]);
 }
 __global__ void initialize_vector_by_const(float* v, float value){
@@ -55,15 +58,18 @@ __global__ void equate_flat_matrix2D(float* phi_old, float* phi_new){
     int flat_index= n*index_y + index_x;
 
     phi_old[flat_index]= phi_new[flat_index];
+    // printf("index_x=%d, index_y=%d, flat_index=%d, phi_old=%f, phi_new=%f\n", index_x, index_y,flat_index, phi_old[flat_index], phi_new[flat_index]);
 
 }
-__global__ void equate_matrix3D(float*** phi_old, float*** phi_new){
+__global__ void equate_flat_matrix3D(float* phi_old, float* phi_new){
 
     int index_x = blockDim.x*blockIdx.x+threadIdx.x;
     int index_y = blockDim.y*blockIdx.y+threadIdx.y;
     int index_z = blockDim.z*blockIdx.z+threadIdx.z;
+    int n= gridDim.x*blockDim.x;
+    int flat_index= n*n*index_z + n*index_y + index_x;
 
-    phi_old[index_z][index_y][index_x]= phi_new[index_z][index_y][index_x];
+    phi_old[flat_index]= phi_new[flat_index];
 
 }
 // ---------------------------------------------------------------------------------------------------------------
@@ -95,6 +101,32 @@ void  write_to_csv_2d(float* data, int N,const char *path){
 
     fclose(fp);
 }
+
+void write_to_csv_3d(float* data, int N, const char* path) {
+    FILE* fp = fopen(path, "w");
+
+    for (int z = 0; z < N; z++) {
+
+        // Optional: mark slice (CSV comment, safe to ignore in parsing)
+        fprintf(fp, "# z = %d\n", z);
+
+        for (int y = 0; y < N; y++) {
+            for (int x = 0; x < N; x++) {
+                int idx = z*N*N + y*N + x;
+                fprintf(fp, "%f", data[idx]);
+
+                if (x < N - 1)
+                    fprintf(fp, ",");
+            }
+            fprintf(fp, "\n");
+        }
+
+        
+    }
+
+    fclose(fp);
+}
+
 //--------------------Test Code----------------
 // int main(void)
 
