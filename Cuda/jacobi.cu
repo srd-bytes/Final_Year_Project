@@ -48,7 +48,7 @@ int main(void)
     //Vector part
     float* v_gpu;
     cudaMalloc((void**)&v_gpu, N*sizeof(float));
-    initialize_vector_const<<<N/Tile_width, Tile_width>>>(N,v_gpu,0.0f); // initialize to 0
+    initialize_vector_const<<<N/Tile_width, Tile_width>>>(N,v_gpu,0.0f); // initialization to 0
 
     
     
