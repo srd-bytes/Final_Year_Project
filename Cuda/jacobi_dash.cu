@@ -67,21 +67,21 @@ void jacobi_cuda_3D(float*** phi_old, float*** phi_new){
 int main(void)
 {
     // -----------------------------------Multidimensional memory allocation on GPU-----------------------------------
-    float** phi_old_cpu= (float**)malloc(N*sizeof(float*));
-    float** phi_new_cpu= (float**)malloc(N*sizeof(float*));
+    // float** phi_old_cpu= (float**)malloc(N*sizeof(float*));
+    // float** phi_new_cpu= (float**)malloc(N*sizeof(float*));
 
 
-    for(int i=0; i<N; i++){
-        cudaMalloc((void**)&phi_new_cpu[i], N*sizeof(float));
-        cudaMalloc((void**)&phi_old_cpu[i], N*sizeof(float));
-    }
+    // for(int i=0; i<N; i++){
+    //     cudaMalloc((void**)&phi_new_cpu[i], N*sizeof(float));
+    //     cudaMalloc((void**)&phi_old_cpu[i], N*sizeof(float));
+    // }
     
-    float** phi_old_gpu;
-    float** phi_new_gpu;
-    cudaMalloc((void**)&phi_new_gpu, N*sizeof(float*));
-    cudaMalloc((void**)&phi_old_gpu, N*sizeof(float*));
-    cudaMemcpy(phi_old_gpu, phi_old_cpu, N*sizeof(float*), cudaMemcpyHostToDevice);
-    cudaMemcpy(phi_new_gpu, phi_new_cpu, N*sizeof(float*), cudaMemcpyHostToDevice);
+    // float** phi_old_gpu;
+    // float** phi_new_gpu;
+    // cudaMalloc((void**)&phi_new_gpu, N*sizeof(float*));
+    // cudaMalloc((void**)&phi_old_gpu, N*sizeof(float*));
+    // cudaMemcpy(phi_old_gpu, phi_old_cpu, N*sizeof(float*), cudaMemcpyHostToDevice);
+    // cudaMemcpy(phi_new_gpu, phi_new_cpu, N*sizeof(float*), cudaMemcpyHostToDevice);
     
     // ----------------------------------------------------------------------------------------------------
     
