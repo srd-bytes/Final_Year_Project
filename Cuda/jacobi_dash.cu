@@ -21,25 +21,27 @@ void jacobi_cuda_1D(float* phi_old, float* phi_new){
 
     for(int i=0; i<iterations; i++){
 
-        physics_solution_1D<<<blocks, threads_per_blk>>>(phi_old, phi_new, N);
+        physics_solution_1D<<<blocks, threads_per_blk>>>(phi_old, phi_new);
         equate_vectors<<<blocks, threads_per_blk>>>(phi_old, phi_new);
         
     }  
 }
 
-void jacobi_cuda_2D(float** phi_old, float** phi_new){
+void jacobi_cuda_2D(float* phi_old, float* phi_new){
     // block = N/Tilewidth, thrd_per_blk = Tilewidth
     
 
     dim3 blocks(N/Tile_width, N/Tile_width); 
     dim3 threads_per_blk(Tile_width,Tile_width);
 
-    initialize_2Dmatrix_by_const<<<blocks, threads_per_blk>>>(phi_old, 0.0f);
+    initialize_2Dmatrix_by_const<<<blocks, threads_per_blk>>>(phi_old,0.0f);
 
     for(int i=0; i<iterations; i++){
 
-        physics_solution_2D<<<blocks, threads_per_blk>>>(phi_old, phi_new, N);
-        equate_matrix2D<<<blocks, threads_per_blk>>>(phi_old, phi_new);
+        physics_solution_2D<<<blocks, threads_per_blk>>>(phi_old, phi_new);
+        equate_flat_matrix2D<<<blocks, threads_per_blk>>>(phi_old, phi_new);
+        // std::swap(phi_old, phi_new);
+        cudaDeviceSynchronize();
         
     }  
 }
@@ -67,40 +69,26 @@ void jacobi_cuda_3D(float*** phi_old, float*** phi_new){
 int main(void)
 {
     // -----------------------------------Multidimensional memory allocation on GPU-----------------------------------
-    // float** phi_old_cpu= (float**)malloc(N*sizeof(float*));
-    // float** phi_new_cpu= (float**)malloc(N*sizeof(float*));
-
-
-    // for(int i=0; i<N; i++){
-    //     cudaMalloc((void**)&phi_new_cpu[i], N*sizeof(float));
-    //     cudaMalloc((void**)&phi_old_cpu[i], N*sizeof(float));
-    // }
-    
-    // float** phi_old_gpu;
-    // float** phi_new_gpu;
-    // cudaMalloc((void**)&phi_new_gpu, N*sizeof(float*));
-    // cudaMalloc((void**)&phi_old_gpu, N*sizeof(float*));
-    // cudaMemcpy(phi_old_gpu, phi_old_cpu, N*sizeof(float*), cudaMemcpyHostToDevice);
-    // cudaMemcpy(phi_new_gpu, phi_new_cpu, N*sizeof(float*), cudaMemcpyHostToDevice);
-    
+    float* phi_old;
+    cudaMalloc((void**)&phi_old, N*N*sizeof(float));
+    float* phi_new;
+    cudaMalloc((void**)&phi_new, N*N*sizeof(float));
     // ----------------------------------------------------------------------------------------------------
     
     // ------------------Jacobi iteration---------------------------------------------------------------
-    jacobi_cuda_2D(phi_old_gpu, phi_new_gpu);
+    jacobi_cuda_2D(phi_old, phi_new);
     // -------------------------------------------------------------------------------------------------
 
     // ---------------------------Writing back to cpu-------------------------------------------------
-    float** result= (float**)malloc(N*sizeof(float*));
-    for(int i=0; i<N;i++){
-        result[i]= (float*)malloc(N*sizeof(float));
-        cudaMemcpy(result[i], phi_new_cpu[i], N* sizeof(float), cudaMemcpyDeviceToHost);
-    }
+    float* result= (float*)malloc(N*N*sizeof(float));
+    cudaMemcpy(result, phi_old, sizeof(float), cudaMemcpyDeviceToHost);
+    
     // ------------------------------------------------------------------------------------------------
     
     
 
     // Writing to a csv
-    write_to_csv_2d(result,"./result/potential_2D.csv");
+    write_to_csv_2d(result, N ,"./result/potential_2D_new.csv");
 
     // // 3D ssolution storing
     // FILE* fp = fopen("potential_3D.csv", "w");
@@ -120,17 +108,11 @@ int main(void)
 
 
     // -------------------Freeing------------------------------
-    for(int i=0; i<N;i++){
-        cudaFree(phi_old_cpu[i]);
-        cudaFree(phi_new_cpu[i]);
-        free(result[i]);
-        
-    }
-    cudaFree(phi_new_gpu);
-    cudaFree(phi_old_gpu);
-    free(phi_old_cpu);
-    free(phi_new_cpu);
+    cudaFree(phi_old);
+    cudaFree(phi_new);
     free(result);
+        
+    
     
     return 0;
 }

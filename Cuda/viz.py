@@ -117,4 +117,4 @@ def plot_potential(csv_path, dim=1, **kwargs):
         raise ValueError("dim must be 1 or 2")
 
 
-plot_potential("./result/potential_2D.csv", dim=2)
+plot_potential("./result/potential_2D_new.csv", dim=2)

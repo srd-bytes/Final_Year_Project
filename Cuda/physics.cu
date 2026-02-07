@@ -6,9 +6,10 @@
 
 
 
-__global__ void physics_solution_1D(float* phi_old, float* phi_new, int N){
+__global__ void physics_solution_1D(float* phi_old, float* phi_new){
 
     int index= blockDim.x*blockIdx.x + threadIdx.x;
+    int n=gridDim.x*blockDim.x;
 
     float delta = 0.2f;
     float epsilon = 8.8f;
@@ -20,17 +21,19 @@ __global__ void physics_solution_1D(float* phi_old, float* phi_new, int N){
     float phi_N1 = -10.0f;
 
     float left= (index==0) ? phi_0: phi_old[index-1];   // condition ? if true : else
-    float right= (index==N-1) ? phi_N1 :phi_old[index+1];
+    float right= (index==n-1) ? phi_N1 :phi_old[index+1];
 
     
     phi_new[index] = (left + right + b)/2;
         
 }
 
-__global__ void physics_solution_2D(float** phi_old, float** phi_new, int N){
+__global__ void physics_solution_2D(float* phi_old, float* phi_new){
 
     int index_x = blockDim.x*blockIdx.x+threadIdx.x; //column
     int index_y = blockDim.y*blockIdx.y+threadIdx.y; // rows
+    int n= gridDim.x*blockDim.x;
+    int flat_index= n*index_y + index_x;
 
     float delta = 0.2f;
     float epsilon = 8.8f;
@@ -45,12 +48,12 @@ __global__ void physics_solution_2D(float** phi_old, float** phi_new, int N){
     float phi_down_boundary = 0.0f;
     // -------------------------------------------------------------------------------------------
 
-    float left= (index_x==0) ? phi_left_boundary : phi_old[index_y][index_x-1];
-    float right = (index_x == N-1)? phi_right_boundary :phi_old[index_y][index_x+1];
-    float up = (index_y == 0)? phi_up_boundary :phi_old[index_y-1][index_x];
-    float down= (index_y == N-1) ? phi_down_boundary :phi_old[index_y+1][index_x];
+    float left= (index_x==0) ? phi_left_boundary : phi_old[flat_index-1];
+    float right = (index_x == n-1)? phi_right_boundary :phi_old[flat_index+1];
+    float up = (index_y == 0)? phi_up_boundary :phi_old[flat_index-n];
+    float down= (index_y == n-1) ? phi_down_boundary :phi_old[flat_index+n];
 
-    phi_new[index_y][index_x] = (left + right + up + down + b)/4 ;
+    phi_new[flat_index] = (left + right + up + down + b)/4 ;
 }
 
 __global__ void physics_solution_3D(float*** phi_old, float*** phi_new, int N){

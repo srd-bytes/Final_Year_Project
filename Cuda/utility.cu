@@ -10,11 +10,13 @@
 
 // --------------Initialization----------------------------------------------------------------
 
-__global__ void initialize_2Dmatrix_by_const(float** matrix_2D, float value){
+__global__ void initialize_2Dmatrix_by_const(float* matrix_2D,float value){ // z,y,x for y=0 each x , flat nomenclature stacking the rows
     int index_x = blockDim.x*blockIdx.x+threadIdx.x;
     int index_y = blockDim.y*blockIdx.y+threadIdx.y;
+    int n= gridDim.x*blockDim.x;
     // v[index] = index +1;
-    matrix_2D[index_y][index_x] = value;
+    int flat_index= n*index_y + index_x;
+    matrix_2D[flat_index] = value;
     // printf("v[%d] = %f\n",index,v[index]);
 }
 
@@ -45,12 +47,14 @@ __global__ void equate_vectors(float* phi_old, float* phi_new){
     phi_old[index]= phi_new[index];
 
 }
-__global__ void equate_matrix2D(float** phi_old, float** phi_new){
+__global__ void equate_flat_matrix2D(float* phi_old, float* phi_new){
 
     int index_x = blockDim.x*blockIdx.x+threadIdx.x;
     int index_y = blockDim.y*blockIdx.y+threadIdx.y;
+    int n= gridDim.x*blockDim.x;
+    int flat_index= n*index_y + index_x;
 
-    phi_old[index_y][index_x]= phi_new[index_y][index_x];
+    phi_old[flat_index]= phi_new[flat_index];
 
 }
 __global__ void equate_matrix3D(float*** phi_old, float*** phi_new){
@@ -65,7 +69,7 @@ __global__ void equate_matrix3D(float*** phi_old, float*** phi_new){
 // ---------------------------------------------------------------------------------------------------------------
 
 // ----------------------------------CPU functions--------------------------------------------------------
-void  write_to_csv_1d(float* data, const char *path){
+void  write_to_csv_1d(float* data, int N,const char *path){
     FILE* fp = fopen(path, "w");
 
     for (int i = 0; i < N; i++) {
@@ -76,12 +80,12 @@ void  write_to_csv_1d(float* data, const char *path){
 
     fclose(fp);
 }
-void  write_to_csv_2d(float** data, const char *path){
+void  write_to_csv_2d(float* data, int N,const char *path){
     FILE* fp = fopen(path, "w");
 
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < N; j++) {
-            fprintf(fp, "%f", data[i][j]);
+            fprintf(fp, "%f", data[N*i+j]);
 
             if (j < N - 1)
                 fprintf(fp, ",");
