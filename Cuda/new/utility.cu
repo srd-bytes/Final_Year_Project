@@ -6,6 +6,7 @@
 // const int Tile_width = 8;
 // const int N = 128 ;
 
+// ----------------------------------GPU kernels----------------------------------------------------------------------
 
 // --------------Initialization----------------------------------------------------------------
 
@@ -61,8 +62,35 @@ __global__ void equate_matrix3D(float*** phi_old, float*** phi_new){
     phi_old[index_z][index_y][index_x]= phi_new[index_z][index_y][index_x];
 
 }
+// ---------------------------------------------------------------------------------------------------------------
 
+// ----------------------------------CPU functions--------------------------------------------------------
+void  write_to_csv_1d(float* data, const char *path){
+    FILE* fp = fopen(path, "w");
 
+    for (int i = 0; i < N; i++) {
+        
+        fprintf(fp, "%f", data[i]);
+        fprintf(fp, "\n");
+    }
+
+    fclose(fp);
+}
+void  write_to_csv_2d(float** data, const char *path){
+    FILE* fp = fopen(path, "w");
+
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            fprintf(fp, "%f", data[i][j]);
+
+            if (j < N - 1)
+                fprintf(fp, ",");
+        }
+        fprintf(fp, "\n");
+    }
+
+    fclose(fp);
+}
 //--------------------Test Code----------------
 // int main(void)
 
