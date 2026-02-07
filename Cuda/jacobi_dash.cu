@@ -102,7 +102,7 @@ int main(void)
     // Writing to a csv
     write_to_csv_2d(result,"./result/potential_2D.csv");
 
-    // // 3D ssolution storing
+    // // 3D solution
     // FILE* fp = fopen("potential_3D.csv", "w");
     // fprintf(fp, "x,y,z,phi\n");
 
