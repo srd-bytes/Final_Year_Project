@@ -5,8 +5,8 @@
 #include "physics.cu"
 
 const int iterations = 50;
-const int Tile_width = 8;
-const int N = 128;
+// const int Tile_width = 1024;
+const int N = 33554432;
 
 // Try to get a way to store 3D values in csv, calculate time, write a cpu jacobi to compare, and a open mp jacobi
 
@@ -67,20 +67,30 @@ void jacobi_cuda_3D(float* phi_old, float* phi_new){
 
 int main(void)
 {
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
     // -----------------------------------Multidimensional memory allocation on GPU-----------------------------------
     float* phi_old;
-    cudaMalloc((void**)&phi_old, N*N*N*sizeof(float));
+    cudaMalloc((void**)&phi_old, N*sizeof(float));
     float* phi_new;
-    cudaMalloc((void**)&phi_new, N*N*N*sizeof(float));
+    cudaMalloc((void**)&phi_new, N*sizeof(float));
     // ----------------------------------------------------------------------------------------------------
     
     // ------------------Jacobi iteration---------------------------------------------------------------
-    jacobi_cuda_3D(phi_old, phi_new);
+    cudaEventRecord(start,0);
+    jacobi_cuda_1D(phi_old, phi_new);
+    cudaEventRecord(stop,0);
+
+    cudaEventSynchronize(stop);
+    float milliseconds = 0;
+    cudaEventElapsedTime(&milliseconds, start, stop);
+    printf("Time taken for N=%d : %f seconds\n", N ,milliseconds/1000);
     // -------------------------------------------------------------------------------------------------
 
     // ---------------------------Writing back to cpu-------------------------------------------------
-    float* result= (float*)malloc(N*N*N*sizeof(float));
-    cudaMemcpy(result, phi_old, N*N*N*sizeof(float), cudaMemcpyDeviceToHost);
+    // float* result= (float*)malloc(N*sizeof(float));
+    // cudaMemcpy(result, phi_old, N*sizeof(float), cudaMemcpyDeviceToHost);
     
     // ------------------------------------------------------------------------------------------------
     
@@ -91,29 +101,16 @@ int main(void)
     // --------------------------------------------------------------
 
     // Writing to a csv
-    write_to_csv_3d(result, N ,"./result/potential_3D.csv");
+    // write_to_csv_1d(result, N ,"./result/potential_1D.csv");
 
-    // // 3D ssolution storing
-    // FILE* fp = fopen("potential_3D.csv", "w");
-    // fprintf(fp, "x,y,z,phi\n");
-
-    // for (int i = 0; i < Nx; i++) {
-    //     for (int j = 0; j < Ny; j++) {
-    //         for (int k = 0; k < Nz; k++) {
-                
-    //             fprintf(fp, "%f\n", phi[i][j][k]);
-    //         }
-    //     }
-    // }
-
-    // fclose(fp);
+    
 
 
 
     // -------------------Freeing------------------------------
     cudaFree(phi_old);
     cudaFree(phi_new);
-    free(result);
+    // free(result);
         
     
     

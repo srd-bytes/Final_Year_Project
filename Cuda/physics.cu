@@ -3,7 +3,7 @@
 #include <cuda_runtime.h>
 #include <math.h>
 
-
+const int Tile_width = 1024;
 
 
 __global__ void physics_solution_1D(float* phi_old, float* phi_new){
@@ -11,18 +11,28 @@ __global__ void physics_solution_1D(float* phi_old, float* phi_new){
     int index= blockDim.x*blockIdx.x + threadIdx.x;
     int n=gridDim.x*blockDim.x;
 
-    float delta = 0.2f;
-    float epsilon = 8.8f;
-    float charge_density= 1.0f;
-
-    float b= charge_density*delta*delta/epsilon;
-
     float phi_0 = 10.0f;
     float phi_N1 = -10.0f;
 
-    float left= (index==0) ? phi_0: phi_old[index-1];   // condition ? if true : else
-    float right= (index==n-1) ? phi_N1 :phi_old[index+1];
+    // __shared__ float shared_phi_old_front[Tile_width];
+    // __shared__ float shared_phi_old_back[Tile_width];
+    // shared_phi_old_front[threadIdx.x] = (index==n-1)?phi_N1:phi_old[index+1];
+    // shared_phi_old_back[threadIdx.x] = (index==0)?phi_0:phi_old[index-1];
+    // __syncthreads();
 
+    float delta = 0.2f;
+    float epsilon = 8.8f;
+    float charge_density= 1.0f; // pC/m
+
+    float b= charge_density*delta*delta/epsilon;
+
+    
+
+    // float left= shared_phi_old_back[threadIdx.x];   // condition ? if true : else
+    // float right= shared_phi_old_front[threadIdx.x];
+
+    float left= (index==0)?phi_0:phi_old[index-1];
+    float right= (index==n-1)?phi_N1:phi_old[index+1];
     
     phi_new[index] = (left + right + b)/2;
         
@@ -37,7 +47,7 @@ __global__ void physics_solution_2D(float* phi_old, float* phi_new){
 
     float delta = 0.2f;
     float epsilon = 8.8f;
-    float charge_density= 1.0f;
+    float charge_density= 1.0f; // pC/m^2
 
     float b= charge_density*delta*delta/epsilon;
 
@@ -68,7 +78,7 @@ __global__ void physics_solution_3D(float* phi_old, float* phi_new, int N){
 
     float delta = 0.2f;
     float epsilon = 8.8f;
-    float charge_density= 1.0f;
+    float charge_density= 1.0f; // pC/m^3
 
     float b= charge_density*delta*delta/epsilon;
 
