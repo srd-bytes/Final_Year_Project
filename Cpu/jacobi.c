@@ -5,9 +5,9 @@
 #include "utility.c"
 
 const int iterations = 50;
-const int N = 33554432;
 
-void jacobi_1D(float* phi_old, float* phi_new){
+
+void jacobi_1D(float* phi_old, float* phi_new, int N){
     
 
     float delta = 0.2f;
@@ -32,7 +32,7 @@ void jacobi_1D(float* phi_old, float* phi_new){
 
 }
 
-void jacobi_2D(float* phi_old, float* phi_new){
+void jacobi_2D(float* phi_old, float* phi_new, int N){
     
 
     float delta = 0.2f;
@@ -62,7 +62,7 @@ void jacobi_2D(float* phi_old, float* phi_new){
     }
 }
 
-void jacobi_3D(float* phi_old, float* phi_new){
+void jacobi_3D(float* phi_old, float* phi_new, int N){
     
     float delta = 0.2f;
     float epsilon = 8.8f;
@@ -97,29 +97,78 @@ void jacobi_3D(float* phi_old, float* phi_new){
     }
 }
 
+void run(int N, int times){
+    // ----------------------------Writing Performance--------------------------------------------------
+    FILE* fp = fopen("./result/performance/benchmark_cpu_3d.csv", "w");
+    if (fp == NULL) {
+        printf("Error opening file!\n");
+        return;
+    }
 
+    fprintf(fp, "Power,N,CPU\n");
+    int power = 3;
+
+    // -------------------------------------------------------------------------------------------------
+    for(int i=0; i<=times; i++){
+        float* phi_old;
+        float* phi_new;
+        
+        phi_old = (float*)calloc(N*N*N,sizeof(float));
+        phi_new = (float*)calloc(N*N*N,sizeof(float));
+        
+        
+        time_t start = clock();
+        // jacobi_1D(phi_old, phi_new, N);
+        // jacobi_2D(phi_old, phi_new, N);
+        jacobi_3D(phi_old, phi_new, N);
+        time_t end = clock();
+        double time_taken = ((double)end - start) / CLOCKS_PER_SEC;
+        printf("Time taken for N=%d : %f seconds\n", N, time_taken);
+
+        // --------------------write benchmark--------------------------------------
+        fprintf(fp, "%d,%d,%f\n", power+i,N, time_taken);
+        // -------------------------------------------------------------------------
+        
+        
+        // write_to_csv_1d(phi_old, N, "./result/potential_1d.csv");
+        // write_to_csv_2d(phi_old, N, "phi_old_2d.csv");
+        // write_to_csv_3d(phi_old, N, "phi_old_3d.csv");
+        
+        free(phi_old);
+        free(phi_new);
+        N=N*2;
+    }
+}
 int main(){
-    float* phi_old;
-    float* phi_new;
+
+    int N=8;
+    int times=1;
+    run(N,times);
+
+    // float* phi_old;
+    // float* phi_new;
     
-    phi_old = (float*)calloc(N,sizeof(float));
-    phi_new = (float*)calloc(N,sizeof(float));
+    // phi_old = (float*)calloc(N,sizeof(float));
+    // phi_new = (float*)calloc(N,sizeof(float));
     
     
-    time_t start = clock();
-    jacobi_1D(phi_old, phi_new);
-    time_t end = clock();
-    double time_taken = ((double)end - start) / CLOCKS_PER_SEC;
-    printf("Time taken for N=%d : %f seconds\n", N, time_taken);
+    // time_t start = clock();
+    // jacobi_1D(phi_old, phi_new);
+    // // jacobi_2D(phi_old, phi_new);
+    // // jacobi_3D(phi_old, phi_new);
+    // time_t end = clock();
+    // double time_taken = ((double)end - start) / CLOCKS_PER_SEC;
+    // printf("Time taken for N=%d : %f seconds\n", N, time_taken);
+
+    // fprintf(fp, "%d,%d,%f\n", power+i,N, milliseconds/1000);
     
-    // jacobi_2D(phi_old, phi_new);
-    // jacobi_3D(phi_old, phi_new);
     
-    // write_to_csv_1d(phi_old, N, "./result/potential_1d.csv");
-    // write_to_csv_2d(phi_old, N, "phi_old_2d.csv");
-    // write_to_csv_3d(phi_old, N, "phi_old_3d.csv");
     
-    free(phi_old);
-    free(phi_new);
+    // // write_to_csv_1d(phi_old, N, "./result/potential_1d.csv");
+    // // write_to_csv_2d(phi_old, N, "phi_old_2d.csv");
+    // // write_to_csv_3d(phi_old, N, "phi_old_3d.csv");
+    
+    // free(phi_old);
+    // free(phi_new);
     
 }

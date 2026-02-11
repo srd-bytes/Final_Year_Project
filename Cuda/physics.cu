@@ -3,8 +3,6 @@
 #include <cuda_runtime.h>
 #include <math.h>
 
-const int Tile_width = 1024;
-
 
 __global__ void physics_solution_1D(float* phi_old, float* phi_new){
 
