@@ -21,3 +21,22 @@ typedef struct {
     float top;
     float bottom;
 } Boundary;
+
+typedef struct {
+    int x;
+    int y;
+    int z;
+} Cartesian_int;
+
+typedef struct {
+    float x;
+    float y;
+    float z;
+} Cartesian_float;
+
+typedef struct {
+        float* vertical_1;
+        float* vertical_2;
+        float* horizontal_1;
+        float* horizontal_2;
+    } Buffer;
