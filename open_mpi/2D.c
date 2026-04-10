@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "mpi.h"
-#define N 16384 // size of array
+#define N 1024 // size of array
 #include "structures.c"
 #include <time.h>
 
