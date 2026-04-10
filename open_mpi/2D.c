@@ -2,10 +2,16 @@
 #include <stdlib.h>
 #include <math.h>
 #include "mpi.h"
-#define N 2 // size of array
+#define N 16384 // size of array
 #include "structures.c"
+#include <time.h>
 
 void jacobi_2d_parallel(float phi[N*N], Physics physics, Simulation sim , Boundary boundary ,int argc, char **argv){
+    
+    clock_t start, end;
+    double cpu_time_used;
+
+    start = clock();
 
     MPI_Init(&argc, &argv);
 
@@ -35,36 +41,37 @@ void jacobi_2d_parallel(float phi[N*N], Physics physics, Simulation sim , Bounda
     // ---------------------------------------------------------
 
     // ---------------Main Calculation---------------------------
+    
     float* partial_result = (float*) calloc(block.x*block.y,sizeof(float));
     float* partial_result_new = (float*) calloc(block.x*block.y,sizeof(float));
     
     
+    Buffer buffer; // transmitting buffer
+
+    buffer.vertical_1 = (float*) calloc(block.x,sizeof(float));
+    buffer.vertical_2 = (float*) calloc(block.x,sizeof(float));
+    buffer.horizontal_1 = (float*) calloc(block.y,sizeof(float));
+    buffer.horizontal_2 = (float*) calloc(block.y,sizeof(float));
+    
+    
     
 
+    
+    Buffer rec_buffer; // Receiving buffer
+    rec_buffer.vertical_1 = (float*) calloc(block.x,sizeof(float));
+    rec_buffer.vertical_2 = (float*) calloc(block.x,sizeof(float));
+    rec_buffer.horizontal_1 = (float*) calloc(block.y,sizeof(float));
+    rec_buffer.horizontal_2 = (float*) calloc(block.y,sizeof(float));
+    
     for(int iter=0; iter< sim.iteration; iter++){
 
         
         // non blocking send all the necessary details
 
-        Buffer buffer; // transmitting buffer
-
-        buffer.vertical_1 = (float*) calloc(block.x,sizeof(float));
-        buffer.vertical_2 = (float*) calloc(block.x,sizeof(float));
-        buffer.horizontal_1 = (float*) calloc(block.y,sizeof(float));
-        buffer.horizontal_2 = (float*) calloc(block.y,sizeof(float));
         
         
-        
-    
-        
-        Buffer rec_buffer; // Receiving buffer
-        rec_buffer.vertical_1 = (float*) calloc(block.x,sizeof(float));
-        rec_buffer.vertical_2 = (float*) calloc(block.x,sizeof(float));
-        rec_buffer.horizontal_1 = (float*) calloc(block.y,sizeof(float));
-        rec_buffer.horizontal_2 = (float*) calloc(block.y,sizeof(float));
         
         // MPI_Request request[4];
-
 
 
         // ---------------------------------Corners-------------------------------------------------------
@@ -481,88 +488,93 @@ void jacobi_2d_parallel(float phi[N*N], Physics physics, Simulation sim , Bounda
         
         
         
-    
-    // ---------------Communicating the partial results (Blocking)-------------------------------------------
-    // if(rank!=0){
-    //     MPI_Send(partial_result_new, block.x*block.y, MPI_FLOAT, 0, 99, MPI_COMM_WORLD);
-    // } else {
-    //     for(int u=0;u<block.x*block.y;u++){
-    //         phi[u]=partial_result_new[u];
-    //     }
-    //     for(int k=1; k<np; k++){
-            
-    //         float* buf = (float*) calloc(block.x*block.y,sizeof(float));
-    //         MPI_Recv(buf,block.x*block.y, MPI_FLOAT,k,99,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-    //         for(int u=0;u<block.x*block.y;u++){
-    //             phi[k*block.x*block.y+u]=buf[u];
-    //         }
-    //     }
-    // }
-    // Real position logic to compare with cpu code
-    if(rank != 0){
-        MPI_Send(partial_result_new, block.x * block.y, MPI_FLOAT, 0, 99, MPI_COMM_WORLD);
-    } 
-    else {
+        end = clock();
+        cpu_time_used= ((double) (end - start))/CLOCKS_PER_SEC;
+        
+        if(rank==0 && iter==sim.iteration-1){printf("Execution time = %f seconds\n", cpu_time_used);}
+        // ---------------Communicating the partial results (Blocking)-------------------------------------------
+        
+        // Real position logic to compare with cpu code
+        if(rank != 0){
+            MPI_Send(partial_result_new, block.x * block.y, MPI_FLOAT, 0, 99, MPI_COMM_WORLD);
+        } 
+        else {
 
-        // there are also gaps b/w
-        for(int i = 0; i < block.y; i++){
-            for(int j = 0; j < block.x; j++){
-                phi[i*N + j] = partial_result_new[i*block.x + j];
-            }
-        }
-
-        for(int k = 1; k < np; k++){
-
-            float* buf = (float*) calloc(block.x * block.y, sizeof(float));
-            MPI_Recv(buf, block.x * block.y, MPI_FLOAT, k, 99, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
-            // compute 2D position
-            int row = k / grid.x;
-            int col = k % grid.x;
-
-            // place block correctly
+            // there are also gaps b/w
             for(int i = 0; i < block.y; i++){
                 for(int j = 0; j < block.x; j++){
-
-                    int global_i = row * block.y + i;
-                    int global_j = col * block.x + j;
-
-                    phi[global_i * N + global_j] = buf[i * block.x + j];
+                    phi[i*N + j] = partial_result_new[i*block.x + j];
                 }
             }
 
-            free(buf);
+            for(int k = 1; k < np; k++){
+
+                float* buf = (float*) calloc(block.x * block.y, sizeof(float));
+                MPI_Recv(buf, block.x * block.y, MPI_FLOAT, k, 99, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+                // compute 2D position
+                int row = k / grid.x;
+                int col = k % grid.x;
+
+                // place block correctly
+                for(int i = 0; i < block.y; i++){
+                    for(int j = 0; j < block.x; j++){
+
+                        int global_i = row * block.y + i;
+                        int global_j = col * block.x + j;
+
+                        phi[global_i * N + global_j] = buf[i * block.x + j];
+                    }
+                }
+
+                free(buf);
+            }
         }
+        
+        // -------------------------------------------------------------------------------------------------------
+
+        // --------------------------Testing---------------------------------------------
+        // if(rank ==0){
+
+            
+        //     for(int p=0; p<N*N;p++){
+        //         printf("phi[%d] = %f\n",p,phi[p]);
+        //     }
+            
+        // }
+        // ------------------------------------------------------------------------------
     }
     free(partial_result);
     free(partial_result_new);
-    // -------------------------------------------------------------------------------------------------------
 
-    // --------------------------Testing---------------------------------------------
-    if(rank ==0){
+    free(buffer.vertical_1);
+    free(buffer.vertical_2);
+    free(buffer.horizontal_1);
+    free(buffer.horizontal_2);
 
-        
-        for(int p=0; p<N*N;p++){
-            printf("phi[%d] = %f\n",p,phi[p]);
-        }
-        
-    }
-    // ------------------------------------------------------------------------------
-
+    free(rec_buffer.vertical_1);
+    free(rec_buffer.vertical_2);
+    free(rec_buffer.horizontal_1);
+    free(rec_buffer.horizontal_2);
     MPI_Finalize();
-}
+    
+
 }
 int main(int argc, char **argv) {
     
     // printf("hey");
     // fflush(stdout);
-    float phi[N*N];
+    static float phi[N*N];
 
     Physics physics = {1, 1};
-    Simulation simulation = {1,1};
+    Simulation simulation = {1,10};
     Boundary boundary = {1.0f,-1.0f,0,0 };
 
+    
+
     jacobi_2d_parallel(phi, physics, simulation, boundary ,argc, argv);
+
+    
     // Test for more examples
     return 0;
     
