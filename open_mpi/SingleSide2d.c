@@ -72,46 +72,46 @@ void jacobi_2d_parallel(float phi[N*N], Physics physics, Simulation sim , Bounda
             for(int x=0; x< block.x; x++){
 
                 MPI_Win_fence(0, win);
-                for(int k=0;k<grid.y;k++){
-                    if(x==0){
-                        if(rank==k*grid.x){
-                            left=boundary.left;
-                        } else {
-                            MPI_Get(buffer, block.x*block.y, MPI_FLOAT, rank-1, 0, block.x*block.y, MPI_FLOAT, win);
-                            left = buffer[y*block.x + block.x-1]; // last portion of each row
-                        }
-                    } else {left = partial_result[y*block.x+x-1];}
+                
+                if(x==0){
+                    if(rank % grid.x == 0){
+                        left=boundary.left;
+                    } else {
+                        MPI_Get(buffer, block.x*block.y, MPI_FLOAT, rank-1, 0, block.x*block.y, MPI_FLOAT, win);
+                        left = buffer[y*block.x + block.x-1]; // last portion of each row
+                    }
+                } else {left = partial_result[y*block.x+x-1];}
 
-                    if(x==block.x-1){
-                        if(rank==k*grid.x + grid.x-1){
-                            right=boundary.right;
-                        } else {
-                            MPI_Get(buffer, block.x*block.y, MPI_FLOAT, rank+1, 0, block.x*block.y, MPI_FLOAT, win);
-                            right = buffer[y*block.x]; // first portion of each row
-                        }
-                    } else {right = partial_result[y*block.x+x+1];}
-                }
+                if(x==block.x-1){
+                    if(rank % grid.x == grid.x - 1){
+                        right=boundary.right;
+                    } else {
+                        MPI_Get(buffer, block.x*block.y, MPI_FLOAT, rank+1, 0, block.x*block.y, MPI_FLOAT, win);
+                        right = buffer[y*block.x]; // first portion of each row
+                    }
+                } else {right = partial_result[y*block.x+x+1];}
+                
 
-                for(int k=0;k<grid.x;k++){
+                
 
-                    if(y==0){
-                        if(rank==k){
-                            up=boundary.up;
-                        } else {
-                            MPI_Get(buffer, block.x*block.y, MPI_FLOAT, rank-grid.x, 0, block.x*block.y, MPI_FLOAT, win);
-                            up = buffer[block.x*(block.y-1) + x]; // last row
-                        }
-                    } else {up = partial_result[y*block.x + x-block.x];}
+                if(y==0){
+                    if(rank < grid.x){
+                        up=boundary.up;
+                    } else {
+                        MPI_Get(buffer, block.x*block.y, MPI_FLOAT, rank-grid.x, 0, block.x*block.y, MPI_FLOAT, win);
+                        up = buffer[block.x*(block.y-1) + x]; // last row
+                    }
+                } else {up = partial_result[y*block.x + x-block.x];}
 
-                    if(y==block.y-1){
-                        if(rank==grid.x*(grid.y-1) +k){
-                            down=boundary.down;
-                        } else {
-                            MPI_Get(buffer, block.x*block.y, MPI_FLOAT, rank+grid.x, 0, block.x*block.y, MPI_FLOAT, win);
-                            down = buffer[x]; // first row
-                        }
-                    } else {down = partial_result[y*block.x + x + block.x];}
-                }
+                if(y==block.y-1){
+                    if(rank >= np - grid.x){
+                        down=boundary.down;
+                    } else {
+                        MPI_Get(buffer, block.x*block.y, MPI_FLOAT, rank+grid.x, 0, block.x*block.y, MPI_FLOAT, win);
+                        down = buffer[x]; // first row
+                    }
+                } else {down = partial_result[y*block.x + x + block.x];}
+                
 
                 MPI_Win_fence(0, win);
                 partial_result_new[y*block.x+x] = (left+right+ up+down+b)/4;
