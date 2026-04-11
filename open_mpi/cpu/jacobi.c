@@ -4,20 +4,20 @@
 #include <time.h>
 #include "utility.c"
 
-const int iterations = 50;
+const int iterations = 10;
 
 
 void jacobi_1D(float* phi_old, float* phi_new, int N){
     
 
-    float delta = 0.2f;
-    float epsilon = 8.8f;
+    float delta = 1.0f;
+    float epsilon = 1.0f;
     float charge_density= 1.0f; // pC/m
 
     float b= charge_density*delta*delta/epsilon;
     
-    float left_boundary = 10.0f;
-    float right_boundary = -10.0f;
+    float left_boundary = 1.0f;
+    float right_boundary = -1.0f;
     
     for(int i=0; i<iterations; i++){
 
@@ -26,8 +26,10 @@ void jacobi_1D(float* phi_old, float* phi_new, int N){
             float right = (j==N-1) ? right_boundary : phi_old[j+1];
 
             phi_new[j] = (left+right+b)/2;
-            phi_old[j] = phi_new[j];
+            
         }
+
+        for(int j=0;j<N;j++){phi_old[j] = phi_new[j];}
     }
 
 }
@@ -56,9 +58,12 @@ void jacobi_2D(float* phi_old, float* phi_new, int N){
                 float bottom = (y==N-1) ? bottom_boundary : phi_old[y*N+x +N];
 
                 phi_new[y*N+x] = (left+right+top+bottom+b)/4;
-                phi_old[y*N+x] = phi_new[y*N+x];
+                
             }
         }
+
+        for(int y=0; y<N; y++){
+            for(int x=0; x<N; x++){phi_old[y*N+x] = phi_new[y*N+x];}}
     }
 }
 
@@ -90,43 +95,49 @@ void jacobi_3D(float* phi_old, float* phi_new, int N){
                     float back = (z==N-1) ? back_boundary : phi_old[z*N*N+y*N+x +N*N];
 
                     phi_new[z*N*N+y*N+x] = (left+right+top+bottom+front+back+b)/6;
-                    phi_old[z*N*N+y*N+x] = phi_new[z*N*N+y*N+x];
+                    
                 }
             }
         }
+
+        for(int z=0; z<N; z++){
+            for(int y=0; y<N; y++){
+                for(int x=0; x<N; x++){phi_old[z*N*N+y*N+x] = phi_new[z*N*N+y*N+x];}}}
     }
 }
 
 void run(int N, int times){
     // ----------------------------Writing Performance--------------------------------------------------
-    FILE* fp = fopen("./result/performance/benchmark_cpu_3d.csv", "w");
-    if (fp == NULL) {
-        printf("Error opening file!\n");
-        return;
-    }
+    // FILE* fp = fopen("./result/performance/benchmark_cpu_3d.csv", "w");
+    // if (fp == NULL) {
+    //     printf("Error opening file!\n");
+    //     return;
+    // }
 
-    fprintf(fp, "Power,N,CPU\n");
-    int power = 3;
+    // fprintf(fp, "Power,N,CPU\n");
+    // int power = 3;
 
     // -------------------------------------------------------------------------------------------------
-    for(int i=0; i<=times; i++){
+    for(int i=0; i<times; i++){
         float* phi_old;
         float* phi_new;
         
-        phi_old = (float*)calloc(N*N*N,sizeof(float));
-        phi_new = (float*)calloc(N*N*N,sizeof(float));
+        phi_old = (float*)calloc(N,sizeof(float));
+        phi_new = (float*)calloc(N,sizeof(float));
         
         
         time_t start = clock();
-        // jacobi_1D(phi_old, phi_new, N);
+        jacobi_1D(phi_old, phi_new, N);
         // jacobi_2D(phi_old, phi_new, N);
-        jacobi_3D(phi_old, phi_new, N);
+        // jacobi_3D(phi_old, phi_new, N);
         time_t end = clock();
         double time_taken = ((double)end - start) / CLOCKS_PER_SEC;
         printf("Time taken for N=%d : %f seconds\n", N, time_taken);
 
+        // for(int j=0; j<N; j++){printf("phi[%d] = %f\n",j,phi_new[j]);}
+
         // --------------------write benchmark--------------------------------------
-        fprintf(fp, "%d,%d,%f\n", power+i,N, time_taken);
+        // fprintf(fp, "%d,%d,%f\n", power+i,N, time_taken);
         // -------------------------------------------------------------------------
         
         
@@ -136,12 +147,12 @@ void run(int N, int times){
         
         free(phi_old);
         free(phi_new);
-        N=N*2;
+        // N=N*2;
     }
 }
 int main(){
 
-    int N=8;
+    int N=1024;
     int times=1;
     run(N,times);
 
