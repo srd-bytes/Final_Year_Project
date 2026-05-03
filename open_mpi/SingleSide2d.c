@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "mpi.h"
-#define N 2 // size of array
+#define N 1024 // size of array
 #include "structures.c"
 #include <time.h>
 
@@ -163,11 +163,11 @@ void jacobi_2d_parallel(float phi[N*N], Physics physics, Simulation sim , Bounda
     MPI_Win_fence(0, win);
 
     //-----------------------Testing-----------------------
-    if(rank==0){
-        for(int i=0; i<N*N;i++){
-            printf("phi[%d] = %f\n",i,phi[i]);
-        }
-    }
+    // if(rank==0){
+    //     for(int i=0; i<N*N;i++){
+    //         printf("phi[%d] = %f\n",i,phi[i]);
+    //     }
+    // }
     //-----------------------------------------------------
 
     MPI_Win_free(&win);
@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
     static float phi[N*N];
 
     Physics physics = {1, 1};
-    Simulation simulation = {1,1};
+    Simulation simulation = {1,50};
     Boundary boundary = {1.0f,-1.0f,0,0 };
 
     jacobi_2d_parallel(phi, physics, simulation, boundary ,argc, argv); // I am getting wrong answer for num processor < 4

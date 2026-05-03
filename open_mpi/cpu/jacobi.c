@@ -4,7 +4,7 @@
 #include <time.h>
 #include "utility.c"
 
-const int iterations = 10;
+const int iterations = 1;
 
 
 void jacobi_1D(float* phi_old, float* phi_new, int N){
@@ -122,19 +122,19 @@ void run(int N, int times){
         float* phi_old;
         float* phi_new;
         
-        phi_old = (float*)calloc(N,sizeof(float));
-        phi_new = (float*)calloc(N,sizeof(float));
+        phi_old = (float*)calloc(N*N,sizeof(float));
+        phi_new = (float*)calloc(N*N,sizeof(float));
         
         
         time_t start = clock();
-        jacobi_1D(phi_old, phi_new, N);
-        // jacobi_2D(phi_old, phi_new, N);
+        // jacobi_1D(phi_old, phi_new, N);
+        jacobi_2D(phi_old, phi_new, N);
         // jacobi_3D(phi_old, phi_new, N);
         time_t end = clock();
         double time_taken = ((double)end - start) / CLOCKS_PER_SEC;
         printf("Time taken for N=%d : %f seconds\n", N, time_taken);
 
-        // for(int j=0; j<N; j++){printf("phi[%d] = %f\n",j,phi_new[j]);}
+        for(int j=0; j<N*N; j++){printf("phi[%d] = %f\n",j,phi_new[j]);}
 
         // --------------------write benchmark--------------------------------------
         // fprintf(fp, "%d,%d,%f\n", power+i,N, time_taken);
@@ -152,7 +152,7 @@ void run(int N, int times){
 }
 int main(){
 
-    int N=1024;
+    int N=2;
     int times=1;
     run(N,times);
 

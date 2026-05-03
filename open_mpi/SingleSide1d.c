@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "mpi.h"
-#define N 1024 // size of array (np must be <= N)
+#define N 536870912 // size of array (np must be <= N)
 #include "structures.c"
 #include <time.h>
 
@@ -148,7 +148,7 @@ int main(int argc, char **argv) {
     static float phi[N];
 
     Physics physics = {1, 1};
-    Simulation simulation = {1,10};
+    Simulation simulation = {1,1};
     Boundary boundary = {1.0f,-1.0f,0,0 };
 
     jacobi_1d_parallel(phi, physics, simulation, boundary ,argc, argv); // I am getting wrong answer for num processor < 4
